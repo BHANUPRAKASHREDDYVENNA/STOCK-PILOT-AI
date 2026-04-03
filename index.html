@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Stock Pilot AI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f6f8;
+    }
+
+    header {
+      background: #111;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 20px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .value {
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .low { color: red; }
+    .good { color: green; }
+
+    ul { padding-left: 20px; }
+
+    .chat {
+      height: 250px;
+      overflow-y: auto;
+      background: #fafafa;
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+
+    .msg {
+      padding: 8px;
+      margin: 5px 0;
+      border-radius: 8px;
+      max-width: 70%;
+    }
+
+    .user {
+      background: black;
+      color: white;
+      margin-left: auto;
+    }
+
+    .bot {
+      background: #ddd;
+    }
+
+    input {
+      padding: 10px;
+      width: 70%;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 10px;
+      border: none;
+      background: black;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<header>🚀 Stock Pilot AI</header>
+
+<div class="container">
+
+  <!-- DASHBOARD -->
+  <div class="grid">
+    <div class="card">
+      <div>Total Items</div>
+      <div id="total" class="value"></div>
+    </div>
+    <div class="card">
+      <div>Low Stock</div>
+      <div id="low" class="value low"></div>
+    </div>
+    <div class="card">
+      <div>Healthy</div>
+      <div id="healthy" class="value good"></div>
+    </div>
+  </div>
+
+  <!-- INVENTORY -->
+  <div class="card">
+    <h3>📦 Inventory</h3>
+    <ul id="inventory"></ul>
+  </div>
+
+  <!-- AI CHAT -->
+  <div class="card">
+    <h3>🤖 AI Assistant</h3>
+    <div id="chat" class="chat"></div>
+
+    <input id="input" placeholder="Ask about stock..." />
+    <button onclick="send()">Send</button>
+  </div>
+
+</div>
+
+<script>
+  const inventory = [
+    { name: "Maggi", stock: 10, min: 20 },
+    { name: "Parle-G", stock: 5, min: 15 },
+    { name: "Milk", stock: 25, min: 10 }
+  ];
+
+  let low = 0;
+
+  const list = document.getElementById("inventory");
+
+  inventory.forEach(item => {
+    const li = document.createElement("li");
+    li.innerText = item.name + " - " + item.stock;
+    list.appendChild(li);
+
+    if (item.stock < item.min) low++;
+  });
+
+  document.getElementById("total").innerText = inventory.length;
+  document.getElementById("low").innerText = low;
+  document.getElementById("healthy").innerText = inventory.length - low;
+
+  function addMsg(text, type) {
+    const div = document.createElement("div");
+    div.className = "msg " + type;
+    div.innerText = text;
+    document.getElementById("chat").appendChild(div);
+  }
+
+  async function send() {
+    const input = document.getElementById("input").value;
+    if (!input) return;
+
+    addMsg(input, "user");
+
+    const res = await fetch("http://localhost:5000/api/ai", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        messages: [{ role: "user", content: input }],
+        system: "You are an inventory assistant"
+      })
+    });
+
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || "No reply";
+
+    addMsg(reply, "bot");
+  }
+</script>
+
+</body>
+</html>
